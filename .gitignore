@@ -1,0 +1,7 @@
+/.idea
+/.envrc
+/.env
+/uploads/
+/dist/
+/.direnv/
+/result
