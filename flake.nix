@@ -24,6 +24,15 @@
             drv = self.defaultPackage."${system}";
         };
 
+        dockerImage = pkgs.dockerTools.buildLayeredImage {
+          name = "upload-service";
+          contents = [ self.defaultPackage."${system}".dependencyEnv ];
+          config = {
+            WorkingDir = "/";
+            Cmd = [ "/bin/gunicorn" "--bind" "0.0.0.0:8000" "upload_service.upload_service:app"];
+          };
+        };
+
     }; in with utils.lib; eachSystem defaultSystems out;
 
 }
