@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import Flask, redirect, url_for, session, request, jsonify
+from flask import Flask, redirect, url_for, session, request, jsonify, render_template
 from flask_oauthlib.client import OAuth
 from dotenv import load_dotenv
 import requests
@@ -38,14 +38,20 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 
-def require_bearer(f):
+def require_auth(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        session_token = session.get('github_token', None)
         auth_header = request.headers.get('Authorization')
-        if auth_header is None or not auth_header.startswith('Bearer '):
+        header_token = None
+        if auth_header and auth_header.startswith('Bearer '):
+            header_token = auth_header.split(' ', 1)[1]
+
+        if session_token is None and header_token is None:
             return jsonify({"error": "Invalid or missing Authorization header"}), 401
 
-        token = auth_header.split(' ', 1)[1]
+        token = session_token[0] if session_token else header_token
+
         github_user_url = "https://api.github.com/user"
         headers = {'Authorization': f'token {token}'}
         response = requests.get(github_user_url, headers=headers)
@@ -62,7 +68,7 @@ def require_bearer(f):
 
 @app.route('/')
 def index():
-    return 'Welcome to the file upload service.'
+    return render_template('index.html', authorized="github_token" in session)
 
 
 @app.route('/login')
@@ -89,7 +95,7 @@ def authorized():
 
 
 @app.route('/upload', methods=['POST'])
-@require_bearer
+@require_auth
 def upload_file(username):
     user_folder = os.path.join(UPLOAD_FOLDER, username)
     if not os.path.exists(user_folder):
@@ -117,7 +123,7 @@ def get_github_oauth_token():
 
 
 def main():
-    app.run(debug=True, port=8080)
+    app.run(debug=True, port=8000)
 
 
 if __name__ == '__main__':
