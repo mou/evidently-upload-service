@@ -14,6 +14,7 @@ python-dotenv = "^1.0.0"
 gunicorn = "^20.0.0"
 flask-htmx = "^0.3.1"
 jinja2-fragments = "^1.0.0"
+marshmallow = "^3.20.1"
 
 [tool.poetry.scripts]
 upload-service = "upload_service:main"

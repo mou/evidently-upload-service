@@ -1,11 +1,15 @@
+import base64
+import os
+import uuid
 from functools import wraps
+
+import requests
+from dotenv import load_dotenv
 from flask import Flask, redirect, url_for, session, request, jsonify, render_template
 from flask_htmx import HTMX
-from jinja2_fragments.flask import render_block
 from flask_oauthlib.client import OAuth
-from dotenv import load_dotenv
-import requests
-import os
+from jinja2_fragments.flask import render_block
+from marshmallow import Schema, fields, ValidationError
 
 app = Flask(__name__)
 oauth = OAuth(app)
@@ -39,6 +43,11 @@ github = oauth.remote_app(
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+
+
+class FileSchema(Schema):
+    filename = fields.String(required=True)
+    content = fields.String(required=True)
 
 
 def require_auth(f):
@@ -100,7 +109,7 @@ def authorized():
 
 @app.route('/upload', methods=['POST'])
 @require_auth
-def upload_file(username):
+def ui_upload_file(username):
     user_folder = os.path.join(UPLOAD_FOLDER, username)
     if not os.path.exists(user_folder):
         os.makedirs(user_folder)
@@ -131,6 +140,50 @@ def upload_file(username):
         if error:
             session['error'] = error
         return redirect(url_for('index'))
+
+
+def save_files(user_folder, uploads):
+    for upload in uploads:
+        filename = os.path.join(user_folder, upload['filename'])
+        content = base64.b64decode(upload['content'])
+        with open(filename, 'wb') as f:
+            f.write(content)
+
+
+@app.route('/api/upload', methods=['PUT'])
+@require_auth
+def api_upload_file(username):
+    folder = os.path.join(UPLOAD_FOLDER, username)
+    return store_uploads(folder)
+
+
+@app.route('/api/upload_temporary', methods=['PUT'])
+@require_auth
+def api_upload_file_temporary(username):
+    temp_token = str(uuid.uuid4())
+    folder = os.path.join(UPLOAD_FOLDER, username, temp_token)
+    error, code = store_uploads(folder)
+    if code != 200:
+        return error, code
+    else:
+        return jsonify({"token": temp_token}), 200
+
+
+def store_uploads(folder):
+    request_data = request.json
+    schema = FileSchema(many=True)
+    try:
+        result = schema.load(request_data)
+    except ValidationError as err:
+        return jsonify(err.messages), 400
+
+    try:
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        save_files(folder, result)
+    except Exception as err:
+        return jsonify({"error": str(err)}), 500
+    return jsonify({"success": True}), 200
 
 
 @github.tokengetter
