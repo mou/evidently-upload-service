@@ -165,6 +165,20 @@ async = ["asgiref (>=3.2)"]
 dotenv = ["python-dotenv"]
 
 [[package]]
+name = "flask-htmx"
+version = "0.3.1"
+description = "A Flask extension to work with HTMX."
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "flask_htmx-0.3.1-py3-none-any.whl", hash = "sha256:906c4a40814efcbb48667ab9a8759bd2b65d630ce1aab6d717fc0414210f1291"},
+    {file = "flask_htmx-0.3.1.tar.gz", hash = "sha256:929684c83d0099f070350f500ad3030155eac9423d8d52e8c27766ada372eaf8"},
+]
+
+[package.dependencies]
+Flask = ">=2.0.2,<3.0.0"
+
+[[package]]
 name = "flask-oauthlib"
 version = "0.9.6"
 description = "OAuthlib for Flask"
@@ -239,6 +253,24 @@ MarkupSafe = ">=2.0"
 
 [package.extras]
 i18n = ["Babel (>=2.7)"]
+
+[[package]]
+name = "jinja2-fragments"
+version = "1.0.0"
+description = "Render Jinja2 template block as HTML page fragments on Python web frameworks."
+optional = false
+python-versions = "*"
+files = [
+    {file = "jinja2_fragments-1.0.0-py3-none-any.whl", hash = "sha256:776fe9eadbd467a8f4bdfb84117b124d309afa89cfb4b45431e7b53dea950d97"},
+    {file = "jinja2_fragments-1.0.0.tar.gz", hash = "sha256:cae976ef7b61c3872c13b426b6d0cb61ef9c67084075c25bcd5daa6a4a6baa1d"},
+]
+
+[package.dependencies]
+jinja2 = ">=3.1.0"
+
+[package.extras]
+dev = ["pre-commit"]
+tests = ["fastapi", "flask (>=2.1.0)", "pytest", "pytest-asyncio", "quart (>=0.18.0)", "sanic", "sanic-ext", "sanic-testing", "starlette[full]"]
 
 [[package]]
 name = "markupsafe"
@@ -422,4 +454,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "f5e278b17a1f2fb5cb193f1eb2b4b0598322d743a055d453ad94fdfa392e64d7"
+content-hash = "4177b375b55758210ca7a1e3d0089f9e62d5457bfce8d74c934dcd2c138b2e50"

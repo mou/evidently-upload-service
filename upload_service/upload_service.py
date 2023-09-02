@@ -1,5 +1,7 @@
 from functools import wraps
 from flask import Flask, redirect, url_for, session, request, jsonify, render_template
+from flask_htmx import HTMX
+from jinja2_fragments.flask import render_block
 from flask_oauthlib.client import OAuth
 from dotenv import load_dotenv
 import requests
@@ -7,6 +9,7 @@ import os
 
 app = Flask(__name__)
 oauth = OAuth(app)
+htmx = HTMX(app)
 
 UPLOAD_FOLDER = 'uploads/'
 
@@ -68,7 +71,8 @@ def require_auth(f):
 
 @app.route('/')
 def index():
-    return render_template('index.html', authorized="github_token" in session)
+    error = session.pop('error', None)
+    return render_template('index.html', authorized="github_token" in session, error=error)
 
 
 @app.route('/login')
@@ -101,20 +105,32 @@ def upload_file(username):
     if not os.path.exists(user_folder):
         os.makedirs(user_folder)
 
-    if not request.files:
-        return jsonify({"error": "No file part"}), 400
+    error = None
+    file = None
 
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
+    if not request.files:
+        error = "Invalid request"
+    else:
+        file = request.files['file']
+        if file.filename == '':
+            error = "No file selected"
 
     if file:
         filename = os.path.join(user_folder, file.filename)
         try:
             file.save(filename)
-            return jsonify({"success": True}), 200
         except Exception:
-            return jsonify({"error": "Error saving the file"}), 500
+            error = "Error saving the file"
+
+    if htmx:
+        return render_block('index.html', 'upload_form',
+                            authorized="github_token" in session,
+                            filename=file.filename if file and not error else None,
+                            error=error)
+    else:
+        if error:
+            session['error'] = error
+        return redirect(url_for('index'))
 
 
 @github.tokengetter
